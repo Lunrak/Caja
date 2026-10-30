@@ -19,13 +19,13 @@ export default function ReportesScreen() {
 	const cargarDatos = () => {
 		try {
 			// Contar productos
-			const resultProductos = db.getFirstSync(
+			const resultProductos = db.getFirstSync<{ count: number }>(
 				'SELECT COUNT(*) as count FROM productos',
 			);
 			setTotalProductos(resultProductos?.count || 0);
 
 			// Sumar el valor del inventario (cantidad * precio_compra)
-			const resultInventario = db.getFirstSync(
+			const resultInventario = db.getFirstSync<{ total: number }>(
 				'SELECT SUM(cantidad * precio_compra) as total FROM productos',
 			);
 			setValorInventario(resultInventario?.total || 0);
