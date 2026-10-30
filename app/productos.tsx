@@ -45,7 +45,12 @@ export default function ProductosScreen() {
 					Stock: {item.cantidad} | Precio: ${item.precio_venta.toFixed(2)}
 				</Text>
 			</View>
-			<TouchableOpacity style={styles.editButton}>
+			<TouchableOpacity
+				style={styles.editButton}
+				onPress={() =>
+					router.push({ pathname: '/nuevo-producto', params: { id: item.id } })
+				}
+			>
 				<Ionicons
 					name="pencil"
 					size={20}

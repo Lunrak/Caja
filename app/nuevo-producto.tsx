@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
 	View,
 	Text,
@@ -9,15 +9,34 @@ import {
 	Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { db } from '../database/db';
 
 export default function NuevoProductoScreen() {
+	const { id } = useLocalSearchParams<{ id?: string }>();
+	const esEdicion = !!id;
+
 	const [nombre, setNombre] = useState('');
 	const [codigoBarras, setCodigoBarras] = useState('');
 	const [cantidad, setCantidad] = useState('');
 	const [precioCompra, setPrecioCompra] = useState('');
 	const [precioVenta, setPrecioVenta] = useState('');
+
+	useEffect(() => {
+		if (esEdicion) {
+			const producto = db.getFirstSync<any>(
+				'SELECT * FROM productos WHERE id = ?',
+				[Number(id)],
+			);
+			if (producto) {
+				setNombre(producto.nombre);
+				setCodigoBarras(producto.codigo_barras || '');
+				setCantidad(producto.cantidad.toString());
+				setPrecioCompra(producto.precio_compra.toString());
+				setPrecioVenta(producto.precio_venta.toString());
+			}
+		}
+	}, [id]);
 
 	const guardarProducto = () => {
 		if (!nombre.trim()) {
@@ -26,18 +45,31 @@ export default function NuevoProductoScreen() {
 		}
 
 		try {
-			db.runSync(
-				'INSERT INTO productos (nombre, codigo_barras, cantidad, precio_compra, precio_venta) VALUES (?, ?, ?, ?, ?)',
-				[
-					nombre.trim(),
-					codigoBarras.trim(),
-					parseInt(cantidad) || 0,
-					parseFloat(precioCompra) || 0,
-					parseFloat(precioVenta) || 0,
-				],
-			);
-			Alert.alert('Éxito', 'Producto guardado correctamente');
-			router.back(); // Volver a la pantalla anterior
+			if (esEdicion) {
+				db.runSync(
+					'UPDATE productos SET nombre = ?, codigo_barras = ?, cantidad = ?, precio_compra = ?, precio_venta = ? WHERE id = ?',
+					[
+						nombre.trim(),
+						codigoBarras.trim(),
+						parseInt(cantidad) || 0,
+						parseFloat(precioCompra) || 0,
+						parseFloat(precioVenta) || 0,
+						Number(id),
+					],
+				);
+			} else {
+				db.runSync(
+					'INSERT INTO productos (nombre, codigo_barras, cantidad, precio_compra, precio_venta) VALUES (?, ?, ?, ?, ?)',
+					[
+						nombre.trim(),
+						codigoBarras.trim(),
+						parseInt(cantidad) || 0,
+						parseFloat(precioCompra) || 0,
+						parseFloat(precioVenta) || 0,
+					],
+				);
+			}
+			router.back();
 		} catch (error) {
 			console.error('Error al guardar producto:', error);
 			Alert.alert('Error', 'No se pudo guardar el producto');
@@ -49,37 +81,9 @@ export default function NuevoProductoScreen() {
 			style={styles.container}
 			contentContainerStyle={styles.content}
 		>
-			<View style={styles.imagePlaceholder}>
-				<Ionicons
-					name="grid"
-					size={80}
-					color="#E0D4FC"
-				/>
-			</View>
-
-			<View style={styles.actions}>
-				<TouchableOpacity style={styles.iconButton}>
-					<Ionicons
-						name="image"
-						size={24}
-						color="#888"
-					/>
-				</TouchableOpacity>
-				<TouchableOpacity style={styles.iconButton}>
-					<Ionicons
-						name="camera"
-						size={24}
-						color="#888"
-					/>
-				</TouchableOpacity>
-				<TouchableOpacity style={styles.iconButton}>
-					<Ionicons
-						name="trash"
-						size={24}
-						color="#888"
-					/>
-				</TouchableOpacity>
-			</View>
+			<Text style={styles.title}>
+				{esEdicion ? 'Editar producto' : 'Nuevo producto'}
+			</Text>
 
 			<Text style={styles.label}>Nombre</Text>
 			<TextInput
@@ -89,35 +93,23 @@ export default function NuevoProductoScreen() {
 				placeholder="Ej: Camiseta"
 			/>
 
-			<Text style={styles.label}>Código de barras (opcional)</Text>
+			<Text style={styles.label}>Código de barras</Text>
 			<TextInput
 				style={styles.input}
 				value={codigoBarras}
 				onChangeText={setCodigoBarras}
-				placeholder="Ej: 123456789"
+				placeholder="Opcional"
 				keyboardType="numeric"
 			/>
 
-			<View style={styles.row}>
-				<View style={{ flex: 1, marginRight: 10 }}>
-					<Text style={styles.label}>Cantidad</Text>
-					<TextInput
-						style={styles.input}
-						value={cantidad}
-						onChangeText={setCantidad}
-						placeholder="0"
-						keyboardType="numeric"
-					/>
-				</View>
-				<View style={{ flex: 1 }}>
-					<Text style={styles.label}>Piezas</Text>
-					<TextInput
-						style={[styles.input, { backgroundColor: '#eee' }]}
-						editable={false}
-						value="Piezas"
-					/>
-				</View>
-			</View>
+			<Text style={styles.label}>Cantidad</Text>
+			<TextInput
+				style={styles.input}
+				value={cantidad}
+				onChangeText={setCantidad}
+				placeholder="0"
+				keyboardType="numeric"
+			/>
 
 			<Text style={styles.label}>Precio de compra</Text>
 			<TextInput
@@ -150,14 +142,7 @@ export default function NuevoProductoScreen() {
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: '#fff' },
 	content: { padding: 20 },
-	imagePlaceholder: { alignItems: 'center', marginBottom: 15 },
-	actions: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		gap: 15,
-		marginBottom: 20,
-	},
-	iconButton: { backgroundColor: '#F5F5F5', padding: 12, borderRadius: 50 },
+	title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, color: '#333' },
 	label: { fontSize: 14, color: '#666', marginBottom: 5, marginTop: 10 },
 	input: {
 		borderWidth: 1,
@@ -167,9 +152,8 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		marginBottom: 10,
 	},
-	row: { flexDirection: 'row' },
 	saveButton: {
-		backgroundColor: '#D3D3D3',
+		backgroundColor: '#B088F9',
 		padding: 18,
 		borderRadius: 15,
 		alignItems: 'center',
