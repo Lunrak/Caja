@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function ProductosScreen() {
 	return (
@@ -14,7 +15,10 @@ export default function ProductosScreen() {
 				<Text style={styles.emptyText}>Sin productos</Text>
 			</View>
 
-			<TouchableOpacity style={styles.fab}>
+			<TouchableOpacity
+				style={styles.fab}
+				onPress={() => router.push('/nuevo-producto')}
+			>
 				<Ionicons
 					name="add"
 					size={32}
