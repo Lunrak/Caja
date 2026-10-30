@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
 	View,
 	Text,
@@ -7,8 +7,39 @@ import {
 	TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import { db } from '../database/db';
 
 export default function ReportesScreen() {
+	const [totalProductos, setTotalProductos] = useState(0);
+	const [valorInventario, setValorInventario] = useState(0);
+	const [totalVentas] = useState(0);
+	const [totalGanancias] = useState(0);
+
+	const cargarDatos = () => {
+		try {
+			// Contar productos
+			const resultProductos = db.getFirstSync(
+				'SELECT COUNT(*) as count FROM productos',
+			);
+			setTotalProductos(resultProductos?.count || 0);
+
+			// Sumar el valor del inventario (cantidad * precio_compra)
+			const resultInventario = db.getFirstSync(
+				'SELECT SUM(cantidad * precio_compra) as total FROM productos',
+			);
+			setValorInventario(resultInventario?.total || 0);
+		} catch (error) {
+			console.error('Error al cargar reportes:', error);
+		}
+	};
+
+	useFocusEffect(
+		useCallback(() => {
+			cargarDatos();
+		}, []),
+	);
+
 	return (
 		<ScrollView
 			style={styles.container}
@@ -24,7 +55,7 @@ export default function ReportesScreen() {
 						color="#000"
 					/>
 				</View>
-				<Text style={styles.cardAmount}>$0.00</Text>
+				<Text style={styles.cardAmount}>${totalGanancias.toFixed(2)}</Text>
 				<Text style={styles.cardSubtitle}>Ganancias de hoy</Text>
 			</TouchableOpacity>
 
@@ -38,7 +69,7 @@ export default function ReportesScreen() {
 						color="#000"
 					/>
 				</View>
-				<Text style={styles.cardAmount}>$0.00</Text>
+				<Text style={styles.cardAmount}>${totalVentas.toFixed(2)}</Text>
 				<Text style={styles.cardSubtitle}>Ventas de hoy</Text>
 			</TouchableOpacity>
 
@@ -52,7 +83,7 @@ export default function ReportesScreen() {
 						color="#000"
 					/>
 				</View>
-				<Text style={styles.cardAmount}>$0.00</Text>
+				<Text style={styles.cardAmount}>${valorInventario.toFixed(2)}</Text>
 				<Text style={styles.cardSubtitle}>Valor total del inventario</Text>
 			</TouchableOpacity>
 
@@ -66,7 +97,7 @@ export default function ReportesScreen() {
 						color="#000"
 					/>
 				</View>
-				<Text style={styles.cardAmount}>0</Text>
+				<Text style={styles.cardAmount}>{totalProductos}</Text>
 				<Text style={styles.cardSubtitle}>Productos registrados</Text>
 			</TouchableOpacity>
 		</ScrollView>
