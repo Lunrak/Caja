@@ -5,6 +5,7 @@ import {
 	StyleSheet,
 	TouchableOpacity,
 	FlatList,
+	Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -37,6 +38,28 @@ export default function ProductosScreen() {
 		}, []),
 	);
 
+	const eliminarProducto = (id: number) => {
+		Alert.alert(
+			'Eliminar producto',
+			'¿Estás seguro de que quieres eliminar este producto?',
+			[
+				{ text: 'Cancelar', style: 'cancel' },
+				{
+					text: 'Eliminar',
+					style: 'destructive',
+					onPress: () => {
+						try {
+							db.runSync('DELETE FROM productos WHERE id = ?', [id]);
+							cargarProductos();
+						} catch (error) {
+							console.error('Error al eliminar producto:', error);
+						}
+					},
+				},
+			],
+		);
+	};
+
 	const renderItem = ({ item }: { item: Producto }) => (
 		<View style={styles.card}>
 			<View style={styles.cardInfo}>
@@ -57,6 +80,33 @@ export default function ProductosScreen() {
 					color="#B088F9"
 				/>
 			</TouchableOpacity>
+			<View style={styles.cardActions}>
+				<TouchableOpacity
+					style={styles.editButton}
+					onPress={() =>
+						router.push({
+							pathname: '/nuevo-producto',
+							params: { id: item.id },
+						})
+					}
+				>
+					<Ionicons
+						name="pencil"
+						size={20}
+						color="#B088F9"
+					/>
+				</TouchableOpacity>
+				<TouchableOpacity
+					style={styles.deleteButton}
+					onPress={() => eliminarProducto(item.id)}
+				>
+					<Ionicons
+						name="trash"
+						size={20}
+						color="#FF6B6B"
+					/>
+				</TouchableOpacity>
+			</View>
 		</View>
 	);
 
@@ -133,4 +183,6 @@ const styles = StyleSheet.create({
 		shadowOpacity: 0.3,
 		shadowRadius: 3,
 	},
+	cardActions: { flexDirection: 'row', gap: 10 },
+	deleteButton: { padding: 10, backgroundColor: '#FFF0F0', borderRadius: 8 },
 });
