@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Drawer from 'expo-router/drawer';
 import { Ionicons } from '@expo/vector-icons';
+import { initDatabase } from '../database/db';
 
 export default function RootLayout() {
+	useEffect(() => {
+		initDatabase();
+	}, []);
+
 	return (
 		<Drawer
 			screenOptions={{
-				headerStyle: { backgroundColor: '#1A1A1A' }, // Fondo oscuro de la barra superior
-				headerTintColor: '#fff', // Texto blanco en la barra
-				drawerActiveTintColor: '#8A2BE2', // Color morado para el ítem seleccionado
+				headerStyle: { backgroundColor: '#1A1A1A' },
+				headerTintColor: '#fff',
+				drawerActiveTintColor: '#8A2BE2',
 				drawerLabelStyle: { fontSize: 16 },
 			}}
 		>
